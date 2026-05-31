@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Jino's Weekly Workout Plan</title>
+<style>
+  :root {
+    --bg: #0f0f13; --card: #17171f; --card2: #1e1e28;
+    --accent: #f97316; --blue: #3b82f6; --border: #272733;
+    --text: #f1f5f9; --muted: #64748b; --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+  /* Header */
+  .header { background: #0f0f13; border-bottom: 1px solid var(--border); padding: 16px 20px 0; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #ef4444); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; color: #fff; flex-shrink: 0; }
+  .header-text h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
+  .header-text p { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 1; min-width: 100px; cursor: pointer; padding: 8px 10px 10px; border-radius: 8px 8px 0 0; border: none; background: transparent; color: var(--muted); transition: all 0.18s; position: relative; text-align: center; }
+  .tab-day { font-size: 12px; font-weight: 800; display: block; }
+  .tab-sub { font-size: 9px; font-weight: 500; display: block; margin-top: 2px; line-height: 1.3; color: var(--muted); }
+  .tab.active { background: var(--card); color: var(--text); }
+  .tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
+  .tab.active .tab-sub { color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.03); }
+
+  /* Content */
+  .content { max-width: 700px; margin: 0 auto; padding: 20px 16px 60px; }
+  .day-panel { display: none; }
+  .day-panel.active { display: block; animation: fadeUp 0.2s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Day header */
+  .day-header { margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px; }
+  .day-overview { display: flex; gap: 6px; flex-shrink: 0; }
+  .day-overview img { width: 46px; border-radius: 7px; border: 1px solid var(--border); object-fit: cover; object-position: top; height: 82px; }
+  .day-info h2 { font-size: 18px; font-weight: 900; letter-spacing: -0.4px; }
+  .day-info h2 span { color: var(--accent); }
+  .muscles-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+  .progress-bar { height: 2px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; width: 100%; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #ef4444); border-radius: 2px; }
+
+  /* Tags */
+  .tag { border-radius: 20px; padding: 2px 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+  .tag-chest    { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+  .tag-shoulders{ background: rgba(249,115,22,0.12); color: #fb923c; border: 1px solid rgba(249,115,22,0.25); }
+  .tag-lats     { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
+  .tag-back     { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
+  .tag-biceps   { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
+  .tag-triceps  { background: rgba(20,184,166,0.12); color: #2dd4bf; border: 1px solid rgba(20,184,166,0.25); }
+  .tag-abs      { background: rgba(34,197,94,0.12);  color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+  .tag-legs     { background: rgba(234,179,8,0.12);  color: #facc15; border: 1px solid rgba(234,179,8,0.25); }
+  .tag-glutes   { background: rgba(236,72,153,0.12); color: #f472b6; border: 1px solid rgba(236,72,153,0.25); }
+  .tag-calves   { background: rgba(14,165,233,0.12); color: #38bdf8; border: 1px solid rgba(14,165,233,0.25); }
+  .tag-quads    { background: rgba(234,179,8,0.12);  color: #facc15; border: 1px solid rgba(234,179,8,0.25); }
+
+  /* Exercise cards */
+  .exercises { display: flex; flex-direction: column; gap: 6px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    display: flex; overflow: hidden; cursor: pointer; text-decoration: none; color: inherit;
+    height: 72px; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    align-items: stretch;
+  }
+  .card:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(249,115,22,0.12); transform: translateX(2px); }
+
+  /* App screenshot thumbnail */
+  .app-shot {
+    width: 52px; flex-shrink: 0; overflow: hidden; position: relative; border-right: 1px solid var(--border);
+  }
+  .app-shot img { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; display: block; transition: object-position 0.3s; }
+  .card:hover .app-shot img { object-position: center 32%; }
+
+  /* Card number */
+  .card-num { width: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: var(--muted); border-right: 1px solid var(--border); background: var(--card2); }
+  .card:hover .card-num { color: var(--accent); }
+
+  /* Card body */
+  .card-body { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 5px; min-width: 0; }
+  .card-title { font-size: 13px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-meta { display: flex; align-items: center; gap: 5px; }
+  .sets-badge { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); color: #60a5fa; border-radius: 20px; padding: 1px 7px; font-size: 10px; font-weight: 700; }
+
+  /* YouTube button */
+  .yt-btn {
+    width: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    border-left: 1px solid var(--border); background: var(--card2); transition: background 0.15s;
+  }
+  .yt-btn svg { width: 22px; height: 22px; opacity: 0.5; transition: opacity 0.15s; }
+  .card:hover .yt-btn { background: rgba(255,0,0,0.08); }
+  .card:hover .yt-btn svg { opacity: 1; }
+
+  @media (max-width: 480px) {
+    .tab { min-width: 80px; }
+    .card-title { font-size: 12px; }
+    .app-shot { width: 44px; }
+    .day-overview img { width: 38px; height: 68px; }
+  }
+
+  /* Lightbox */
+  .lightbox {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.92); align-items: center; justify-content: center;
+    cursor: zoom-out;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img {
+    max-width: 90vw; max-height: 90vh; border-radius: 14px;
+    box-shadow: 0 8px 60px rgba(0,0,0,0.8); object-fit: contain;
+    animation: lbIn 0.18s ease;
+  }
+  @keyframes lbIn { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
+  .lightbox-close {
+    position: fixed; top: 18px; right: 22px; font-size: 28px; color: #fff;
+    cursor: pointer; line-height: 1; opacity: 0.7; transition: opacity 0.15s;
+    background: none; border: none; z-index: 1001;
+  }
+  .lightbox-close:hover { opacity: 1; }
+
+  /* Make thumbnails feel clickable */
+  .app-shot img, .day-overview img { cursor: zoom-in; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">F</div>
+    <div class="header-text">
+      <h1>Jino's Weekly Workout Plan</h1>
+      <p>5 Days · 7 Exercises · 3 Sets Each · 35 Total</p>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showDay(1)"><span class="tab-day">Day 1</span><span class="tab-sub">Chest · Shoulders · Arms</span></button>
+    <button class="tab" onclick="showDay(2)"><span class="tab-day">Day 2</span><span class="tab-sub">Legs · Glutes</span></button>
+    <button class="tab" onclick="showDay(3)"><span class="tab-day">Day 3</span><span class="tab-sub">Chest · Shoulders · Triceps</span></button>
+    <button class="tab" onclick="showDay(4)"><span class="tab-day">Day 4</span><span class="tab-sub">Back · Biceps · Abs</span></button>
+    <button class="tab" onclick="showDay(5)"><span class="tab-day">Day 5</span><span class="tab-sub">Legs · Glutes</span></button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- DAY 1 -->
+<div class="day-panel active" id="day-1">
+  <div class="day-header">
+    <div class="day-overview">
+      <img src="screenshots/Screenshot_20260530_201836_Exercise.jpg" alt="Day 1 overview"/>
+      <img src="screenshots/Screenshot_20260530_201845_Exercise.jpg" alt="Day 1 overview"/>
+    </div>
+    <div class="day-info">
+      <h2>Day <span>1</span> — Chest, Shoulders &amp; Arms</h2>
+      <div class="muscles-row">
+        <span class="tag tag-chest">Chest</span><span class="tag tag-shoulders">Shoulders</span>
+        <span class="tag tag-lats">Lats</span><span class="tag tag-biceps">Biceps</span>
+        <span class="tag tag-triceps">Triceps</span><span class="tag tag-abs">Abs</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
+    </div>
+  </div>
+  <div class="exercises">
+    <a class="card" href="https://youtu.be/RUbcymdwWsA" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203706_Exercise.jpg" alt=""/></div>
+      <div class="card-num">1</div>
+      <div class="card-body"><div class="card-title">Dumbbell Flat Chest Press</div><div class="card-meta"><span class="tag tag-chest">Chest</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/529vkEbYXtk" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203718_Exercise.jpg" alt=""/></div>
+      <div class="card-num">2</div>
+      <div class="card-body"><div class="card-title">Dumbbell Incline Chest Press</div><div class="card-meta"><span class="tag tag-chest">Chest</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/_J49iI1aBfU" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203724_Exercise.jpg" alt=""/></div>
+      <div class="card-num">3</div>
+      <div class="card-body"><div class="card-title">Lever One Arm Shoulder Press</div><div class="card-meta"><span class="tag tag-shoulders">Shoulders</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/2C_fGyjnK6U" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203730_Exercise.jpg" alt=""/></div>
+      <div class="card-num">4</div>
+      <div class="card-body"><div class="card-title">Cable Pulldown Pro Lat Bar</div><div class="card-meta"><span class="tag tag-lats">Lats</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/2k9co4UIlEw" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203740_Exercise.jpg" alt=""/></div>
+      <div class="card-num">5</div>
+      <div class="card-body"><div class="card-title">Dumbbell Bicep Curls</div><div class="card-meta"><span class="tag tag-biceps">Biceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/T1EO7u2n7WU" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203747_Exercise.jpg" alt=""/></div>
+      <div class="card-num">6</div>
+      <div class="card-body"><div class="card-title">Dumbbell Overhead Triceps Extension</div><div class="card-meta"><span class="tag tag-triceps">Triceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/_M2Etme-tfE" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203754_Exercise.jpg" alt=""/></div>
+      <div class="card-num">7</div>
+      <div class="card-body"><div class="card-title">Abdominal Crunch — Upper Abs</div><div class="card-meta"><span class="tag tag-abs">Abs</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+  </div>
+</div>
+
+<!-- DAY 2 -->
+<div class="day-panel" id="day-2">
+  <div class="day-header">
+    <div class="day-overview">
+      <img src="screenshots/Screenshot_20260530_201854_Exercise.jpg" alt="Day 2 overview"/>
+      <img src="screenshots/Screenshot_20260530_201903_Exercise.jpg" alt="Day 2 overview"/>
+    </div>
+    <div class="day-info">
+      <h2>Day <span>2</span> — Legs &amp; Glutes</h2>
+      <div class="muscles-row">
+        <span class="tag tag-quads">Quadriceps</span><span class="tag tag-glutes">Glutes</span>
+        <span class="tag tag-calves">Calves</span><span class="tag tag-legs">Hamstrings</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+    </div>
+  </div>
+  <div class="exercises">
+    <a class="card" href="https://youtu.be/6xwFYud808Y" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203810_Exercise.jpg" alt=""/></div>
+      <div class="card-num">1</div>
+      <div class="card-body"><div class="card-title">Bilateral Seated Leg Press</div><div class="card-meta"><span class="tag tag-quads">Quadriceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/_G8DD6oJNSI" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203816_Exercise.jpg" alt=""/></div>
+      <div class="card-num">2</div>
+      <div class="card-body"><div class="card-title">Bodyweight Step Up</div><div class="card-meta"><span class="tag tag-quads">Quadriceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/uW4fW3-Fi1Y" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203824_Exercise.jpg" alt=""/></div>
+      <div class="card-num">3</div>
+      <div class="card-body"><div class="card-title">Pelvic: Glute Bridges</div><div class="card-meta"><span class="tag tag-glutes">Glutes</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/Fgorziu6N7U" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203831_Exercise.jpg" alt=""/></div>
+      <div class="card-num">4</div>
+      <div class="card-body"><div class="card-title">Dumbbell Calf Raise</div><div class="card-meta"><span class="tag tag-calves">Calves</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/yQ3J0I9DJPQ" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203839_Exercise.jpg" alt=""/></div>
+      <div class="card-num">5</div>
+      <div class="card-body"><div class="card-title">Bilateral Leg Extensions</div><div class="card-meta"><span class="tag tag-quads">Quadriceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/0hDRr4uoxgw" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203848_Exercise.jpg" alt=""/></div>
+      <div class="card-num">6</div>
+      <div class="card-body"><div class="card-title">Lying Bilateral Leg Curls</div><div class="card-meta"><span class="tag tag-legs">Hamstrings</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/CjAVezAggkI" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203856_Exercise.jpg" alt=""/></div>
+      <div class="card-num">7</div>
+      <div class="card-body"><div class="card-title">Seated Thigh Adduction (Hip Adduction)</div><div class="card-meta"><span class="tag tag-legs">Hamstrings</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+  </div>
+</div>
+
+<!-- DAY 3 -->
+<div class="day-panel" id="day-3">
+  <div class="day-header">
+    <div class="day-overview">
+      <img src="screenshots/Screenshot_20260530_201937_Exercise.jpg" alt="Day 3 overview"/>
+      <img src="screenshots/Screenshot_20260530_201948_Exercise.jpg" alt="Day 3 overview"/>
+    </div>
+    <div class="day-info">
+      <h2>Day <span>3</span> — Chest, Shoulders &amp; Triceps</h2>
+      <div class="muscles-row">
+        <span class="tag tag-chest">Chest</span><span class="tag tag-shoulders">Shoulders</span>
+        <span class="tag tag-triceps">Triceps</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
+    </div>
+  </div>
+  <div class="exercises">
+    <a class="card" href="https://youtu.be/529vkEbYXtk" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203907_Exercise.jpg" alt=""/></div>
+      <div class="card-num">1</div>
+      <div class="card-body"><div class="card-title">Dumbbell Incline Chest Press</div><div class="card-meta"><span class="tag tag-chest">Chest</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/Lw6A9NCwReU" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203914_Exercise.jpg" alt=""/></div>
+      <div class="card-num">2</div>
+      <div class="card-body"><div class="card-title">Lever Pec Deck Fly</div><div class="card-meta"><span class="tag tag-chest">Chest</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/n_Jid8eHQyA" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203919_Exercise.jpg" alt=""/></div>
+      <div class="card-num">3</div>
+      <div class="card-body"><div class="card-title">Overhead Military Press / DB Shoulder Press</div><div class="card-meta"><span class="tag tag-shoulders">Shoulders</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/JeYouxFZZiI" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203924_Exercise.jpg" alt=""/></div>
+      <div class="card-num">4</div>
+      <div class="card-body"><div class="card-title">Dumbbell Lateral Raise</div><div class="card-meta"><span class="tag tag-shoulders">Shoulders</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/bJ2SrMpb7vs" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203931_Exercise.jpg" alt=""/></div>
+      <div class="card-num">5</div>
+      <div class="card-body"><div class="card-title">Dumbbell Front Raise</div><div class="card-meta"><span class="tag tag-shoulders">Shoulders</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/akoIbSegslk" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203939_Exercise.jpg" alt=""/></div>
+      <div class="card-num">6</div>
+      <div class="card-body"><div class="card-title">Bench Dip</div><div class="card-meta"><span class="tag tag-triceps">Triceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/8_bkaAQLA88" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203945_Exercise.jpg" alt=""/></div>
+      <div class="card-num">7</div>
+      <div class="card-body"><div class="card-title">Cable Bentover Bar Pushdown</div><div class="card-meta"><span class="tag tag-triceps">Triceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+  </div>
+</div>
+
+<!-- DAY 4 -->
+<div class="day-panel" id="day-4">
+  <div class="day-header">
+    <div class="day-overview">
+      <img src="screenshots/Screenshot_20260530_201958_Exercise.jpg" alt="Day 4 overview"/>
+      <img src="screenshots/Screenshot_20260530_202010_Exercise.jpg" alt="Day 4 overview"/>
+    </div>
+    <div class="day-info">
+      <h2>Day <span>4</span> — Back, Biceps &amp; Abs</h2>
+      <div class="muscles-row">
+        <span class="tag tag-back">Lats</span><span class="tag tag-biceps">Biceps</span>
+        <span class="tag tag-abs">Abs</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+    </div>
+  </div>
+  <div class="exercises">
+    <a class="card" href="https://youtu.be/L69miffB9tc" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203955_Exercise.jpg" alt=""/></div>
+      <div class="card-num">1</div>
+      <div class="card-body"><div class="card-title">Seated Cable Row</div><div class="card-meta"><span class="tag tag-back">Lats</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/K9Yd_4QJSMo" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_203959_Exercise.jpg" alt=""/></div>
+      <div class="card-num">2</div>
+      <div class="card-body"><div class="card-title">Low One Arm Standing Rows</div><div class="card-meta"><span class="tag tag-back">Lats</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/K18C5Yo0Bhc" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204003_Exercise.jpg" alt=""/></div>
+      <div class="card-num">3</div>
+      <div class="card-body"><div class="card-title">Cable Biceps Curl</div><div class="card-meta"><span class="tag tag-biceps">Biceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/9Mpl_rio1Hk" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204008_Exercise.jpg" alt=""/></div>
+      <div class="card-num">4</div>
+      <div class="card-body"><div class="card-title">DB Standing Hammer Curls</div><div class="card-meta"><span class="tag tag-biceps">Biceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/4qOG4RDgdyE" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204013_Exercise.jpg" alt=""/></div>
+      <div class="card-num">5</div>
+      <div class="card-body"><div class="card-title">Leg Raise</div><div class="card-meta"><span class="tag tag-abs">Abs</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/jIc2p38I7Ww" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204018_Exercise.jpg" alt=""/></div>
+      <div class="card-num">6</div>
+      <div class="card-body"><div class="card-title">Plate Russian Twist with Feet on the Ground</div><div class="card-meta"><span class="tag tag-abs">Abs</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/AL5EsPLhwtE" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204026_Exercise.jpg" alt=""/></div>
+      <div class="card-num">7</div>
+      <div class="card-body"><div class="card-title">Planks</div><div class="card-meta"><span class="tag tag-abs">Abs</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+  </div>
+</div>
+
+<!-- DAY 5 -->
+<div class="day-panel" id="day-5">
+  <div class="day-header">
+    <div class="day-overview">
+      <img src="screenshots/Screenshot_20260530_202021_Exercise.jpg" alt="Day 5 overview"/>
+      <img src="screenshots/Screenshot_20260530_202029_Exercise.jpg" alt="Day 5 overview"/>
+    </div>
+    <div class="day-info">
+      <h2>Day <span>5</span> — Legs &amp; Glutes</h2>
+      <div class="muscles-row">
+        <span class="tag tag-quads">Quadriceps</span><span class="tag tag-glutes">Glutes</span>
+        <span class="tag tag-calves">Calves</span><span class="tag tag-legs">Hamstrings</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+  <div class="exercises">
+    <a class="card" href="https://youtu.be/6xwFYud808Y" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204040_Exercise.jpg" alt=""/></div>
+      <div class="card-num">1</div>
+      <div class="card-body"><div class="card-title">Bilateral Seated Leg Press</div><div class="card-meta"><span class="tag tag-quads">Quadriceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/RMLonZPjnNU" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204047_Exercise.jpg" alt=""/></div>
+      <div class="card-num">2</div>
+      <div class="card-body"><div class="card-title">Dumbbell Goblet Squats</div><div class="card-meta"><span class="tag tag-quads">Quadriceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/t7_opYzpr64" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204057_Exercise.jpg" alt=""/></div>
+      <div class="card-num">3</div>
+      <div class="card-body"><div class="card-title">Seated Dumbbell Calf Raises</div><div class="card-meta"><span class="tag tag-calves">Calves</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/yQ3J0I9DJPQ" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204124_Exercise.jpg" alt=""/></div>
+      <div class="card-num">4</div>
+      <div class="card-body"><div class="card-title">Bilateral Leg Extensions</div><div class="card-meta"><span class="tag tag-quads">Quadriceps</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/0hDRr4uoxgw" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204130_Exercise.jpg" alt=""/></div>
+      <div class="card-num">5</div>
+      <div class="card-body"><div class="card-title">Lying Bilateral Leg Curls</div><div class="card-meta"><span class="tag tag-legs">Hamstrings</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/G_8LItOiZ0Q" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204136_Exercise.jpg" alt=""/></div>
+      <div class="card-num">6</div>
+      <div class="card-body"><div class="card-title">Seated Hip Abductor (Outer Thigh)</div><div class="card-meta"><span class="tag tag-legs">Hamstrings</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+    <a class="card" href="https://youtu.be/wrLJeRWO4ps" target="_blank">
+      <div class="app-shot"><img src="screenshots/Screenshot_20260530_204141_Exercise.jpg" alt=""/></div>
+      <div class="card-num">7</div>
+      <div class="card-body"><div class="card-title">Lying Glute Kickbacks</div><div class="card-meta"><span class="tag tag-glutes">Glutes</span><span class="sets-badge">3 Sets</span></div></div>
+      <div class="yt-btn"><svg viewBox="0 0 24 24" fill="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="#ff0000"/><polygon points="9.75,15.02 15.5,12 9.75,8.98 9.75,15.02" fill="white"/></svg></div>
+    </a>
+  </div>
+</div>
+
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt=""/>
+</div>
+
+<script>
+  function showDay(n) {
+    document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('day-' + n).classList.add('active');
+    document.querySelectorAll('.tab')[n - 1].classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+  // Wire up all screenshot thumbnails
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.app-shot img, .day-overview img').forEach(img => {
+      img.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        openLightbox(img.src);
+      });
+    });
+  });
+</script>
+</body>
+</html>
